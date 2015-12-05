@@ -1,0 +1,11 @@
+# depslib dependency file v1.0
+1449354135 source:c:\users\jesús\documents\run dino run\main.c
+	<stdlib.h>
+	<stdio.h>
+	<graphics.h>
+
+1266119414 c:\program files (x86)\codeblocks-ep\sdk\winbgim\include\graphics.h
+	<windows.h>
+	<limits.h>
+	<sstream>
+
