@@ -45,9 +45,7 @@
 			<Add library="ole32" />
 			<Add directory="$(CODEBLOCKS)\sdk\winbgim\lib" />
 		</Linker>
-		<Unit filename="main.c">
-			<Option compilerVar="CC" />
-		</Unit>
+		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />
