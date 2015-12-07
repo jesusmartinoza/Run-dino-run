@@ -6,6 +6,7 @@
 #define CUADRO_TAM 80 // Tamaño de cada cuadro en la malla.
 #define HEIGHT 700
 #define NIMAGENES 2 // Numero de imagenes externas.
+#define NSKINS 3
 #define PIXEL_TAM 4
 #define WIDTH 1040
 
@@ -26,23 +27,26 @@ typedef struct nodo
 int creaMalla(Malla *cab, int n, int m); // Crea la matriz donde iran los personajes y escenario.
 int creaNodo(Malla **cab, int x, int y); // Pide memoria para la creación de un nodo.
 void dibujaSprite(String nombre, int x, int y); // Abre un archivo de texto y comienza a dibujar a partir de las coordenadas.
+void dibujaVidas(int vidas); // Durante el juego dibuja las vidas del jugador.
 int enlaza(Malla *m); // Completa los enlaces de toda la malla.
 int insertaHorizontal(Malla *cab, int x, int y);
 int insertaVertical(Malla *cab, int x, int y);
 void iniciaEntorno(); // Se encarga de iniciar la parte gráfica y obtener las imágenes del juego.
-void juego(int nivel); // Contiene todo el juego.
+void juego(int nivel, int vidas); // Contiene todo el juego.
 void obtenerDatos(int *huesos, int *skin); // Lee de un archivo externo los huesos obtenidos del jugador y su skin.
-void menu(); // Dibujar el menú principal
-void pintaAmbiente(int); // Dibuja todo el escenario
-void portada(); // Dibujar la pantalla principal
+void menu(); // Dibujar el menú principal.
+void pintaAmbiente(int pagina); // Dibuja todo el escenario.
+void portada(); // Dibujar la pantalla principal.
+void tienda(); // Dibuja todos los articulos disponibles.
 
 // Variables globales.
 void *imagenes[NIMAGENES]; // Arreglo de imagenes en el juego
+int skin;
 
 int main()
 {
+    initwindow(WIDTH, HEIGHT, "Run dino run");
     iniciaEntorno();
-    portada();
 
     getch();
     return 0;
@@ -88,10 +92,12 @@ void dibujaSprite(String nombre, int x, int y)
 
     //strcat(nombre,".txt");
     //sprintf(nombre, "%s.txt", nombre);
+
     f = fopen(nombre,"r");
     if(f)
     {
         fscanf(f, "%d\t%d\n", &n, &m);
+
         for(i=0; i<n; i++, fscanf(f,"\n"), y+=PIXEL_TAM)
             for(j=0, x=xIni; j<m; j++, x+=PIXEL_TAM)
             {
@@ -104,6 +110,14 @@ void dibujaSprite(String nombre, int x, int y)
             }
     }
     fclose(f);
+}
+
+void dibujaVidas(int vidas)
+{
+    int i, xi;
+
+    for(i=0, xi = 20; i<vidas; i++, xi+=PIXEL_TAM*20)
+        dibujaSprite("corazon.txt", xi, 120);
 }
 
 int enlaza(Malla *l)
@@ -134,10 +148,11 @@ int enlaza(Malla *l)
 
 void iniciaEntorno()
 {
-    initwindow(WIDTH, HEIGHT, "Run dino run");
     int i;
+
     setfillstyle(1, COLOR(79, 182, 225));
     setbkcolor(COLOR(79, 182, 225));
+    setcolor(WHITE);
 
     String nombres[NIMAGENES] = {
         "img/logotipo.gif",
@@ -155,6 +170,7 @@ void iniciaEntorno()
     readimagefile(nombres[1],0,0,WIDTH,300);
     imagenes[1]  = malloc(imagesize(0,0,WIDTH,300));
     getimage(0,0,WIDTH,300, imagenes[1]);
+    portada();
 }
 
 int insertaHorizontal(Malla *cab, int x, int y)
@@ -188,9 +204,7 @@ int insertaVertical(Malla *l, int x, int y)
     if(creaNodo(&nuevo,x,y))
     {
         if(!l)
-        {
             l=nuevo;
-        }
         else
         {
             aux=l;
@@ -206,11 +220,12 @@ int insertaVertical(Malla *l, int x, int y)
     return(res);
 }
 
-void juego(int nivel)
+void juego(int nivel, int vidas)
 {
     char tecla;
     int spriteH, // Altura de un sprite
         pagina = 1;
+    String nSkin;
 
     srand(time(NULL));
     spriteH = 592 - PIXEL_TAM*23;
@@ -224,6 +239,7 @@ void juego(int nivel)
     {
         setactivepage(pagina=!pagina);
         pintaAmbiente(pagina);
+        dibujaVidas(vidas);
         setvisualpage(pagina);
 
         if(kbhit())
@@ -232,12 +248,15 @@ void juego(int nivel)
             switch(tecla = getch())
             {
                 case 72:
-                    dibujaSprite("dino1.0.txt", 10, spriteH);
+                    strcpy(nSkin, "");
+                    sprintf(nSkin, "dino%d.0.txt", skin);
+                    dibujaSprite(nSkin, 10, spriteH);
                     delay(200);
                     break;
             }
         }
     }while(tecla!=27);
+    iniciaEntorno();
     /*for(i=0;i<226; i++)
     {
         //setfillstyle(1, COLOR(0,i,i));
@@ -278,13 +297,15 @@ void menu()
                     break;
                 }
     }while(op==-1);
+
+    fflush(stdin);
     switch(op)
     {
         case 0:
-            juego(1);
+            juego(1, 3);
             break;
         case 1:
-            //imprimeRegistro();
+            tienda();
             break;
         case 2:
             //ayuda("ayuda.txt", 0, HEIGHT/2-100, WIDTH, HEIGHT);
@@ -309,23 +330,22 @@ void obtenerDatos(int *huesos, int *skin)
 
 void pintaAmbiente(int pagina)
 {
-    String skin;
+    String nSkin;
     // Borra todo y pone el fondo.
     setfillstyle(1, COLOR(79, 182, 225));
     bar(0,0, WIDTH, HEIGHT);
     putimage(0, 400, imagenes[1], COPY_PUT);
 
     // Dino
-    strcpy(skin, "dino1");
-    sprintf(skin, "%s.%d.txt", skin, pagina);
+    sprintf(nSkin, "dino%d.%d.txt", skin, pagina);
     putimage(0, 400, imagenes[1], COPY_PUT);
-    dibujaSprite(skin, 10, 592);
+    dibujaSprite(nSkin, 10, 592);
     delay(120);
 }
 
 void portada()
 {
-    int i, huesos, skin;
+    int i, huesos;
     putimage(0, 400, imagenes[1], COPY_PUT);
     String aux;
 
@@ -345,4 +365,26 @@ void portada()
     outtextxy(WIDTH-180, 25, aux);
 
     menu();
+}
+
+void tienda()
+{
+    int i, xi;
+    String aux;
+
+    setfillstyle(1, COLOR(79, 182, 225));
+    bar(0,400, WIDTH, HEIGHT);
+
+    for(i=0, xi=WIDTH/3; i<NSKINS; i++, xi+=PIXEL_TAM*25)
+    {
+        sprintf(aux, "dino%d.0.txt", i+1);
+        dibujaSprite(aux, xi, 450);
+        if(skin==i+1)
+        {
+            setfillstyle(1, 0x00f);
+            bar(xi, 450+PIXEL_TAM*25, xi+PIXEL_TAM*20, 460+PIXEL_TAM*25);
+        }
+    }
+    getch();
+    iniciaEntorno();
 }
