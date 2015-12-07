@@ -30,7 +30,8 @@ int enlaza(Malla *m); // Completa los enlaces de toda la malla.
 int insertaHorizontal(Malla *cab, int x, int y);
 int insertaVertical(Malla *cab, int x, int y);
 void iniciaEntorno(); // Se encarga de iniciar la parte gráfica y obtener las imágenes del juego.
-void juego(int nivel); // Inicia juego
+void juego(int nivel); // Contiene todo el juego.
+void obtenerDatos(int *huesos, int *skin); // Lee de un archivo externo los huesos obtenidos del jugador y su skin.
 void menu(); // Dibujar el menú principal
 void pintaAmbiente(int); // Dibuja todo el escenario
 void portada(); // Dibujar la pantalla principal
@@ -136,6 +137,7 @@ void iniciaEntorno()
     initwindow(WIDTH, HEIGHT, "Run dino run");
     int i;
     setfillstyle(1, COLOR(79, 182, 225));
+    setbkcolor(COLOR(79, 182, 225));
 
     String nombres[NIMAGENES] = {
         "img/logotipo.gif",
@@ -293,6 +295,18 @@ void menu()
     }
 }
 
+void obtenerDatos(int *huesos, int *skin)
+{
+    FILE *f;
+
+    f = fopen("ajustes.txt", "r");
+
+    if(f)
+        fscanf(f, "%X %d\n", huesos, skin);
+
+    fclose(f);
+}
+
 void pintaAmbiente(int pagina)
 {
     String skin;
@@ -311,14 +325,24 @@ void pintaAmbiente(int pagina)
 
 void portada()
 {
-    int i;
+    int i, huesos, skin;
     putimage(0, 400, imagenes[1], COPY_PUT);
+    String aux;
 
+    // Animacion del titulo del juego.
     for(i=0; i<50; i++)
     {
         bar(0, 0, WIDTH,305);
         putimage(WIDTH/10, i, imagenes[0], COPY_PUT);
         delay(2);
     }
+
+    // Escribe numero de huesos
+    obtenerDatos(&huesos, &skin);
+    dibujaSprite("hueso.txt", WIDTH-100, 0);
+    sprintf(aux, "%d", huesos);
+    settextstyle(3, HORIZ_DIR, 49);
+    outtextxy(WIDTH-180, 25, aux);
+
     menu();
 }
