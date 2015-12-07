@@ -6,6 +6,7 @@
 #define CUADRO_TAM 80 // Tamaño de cada cuadro en la malla.
 #define HEIGHT 700
 #define NIMAGENES 2 // Numero de imagenes externas.
+#define PIXEL_TAM 4
 #define WIDTH 1040
 
 typedef char String[50];
@@ -24,12 +25,14 @@ typedef struct nodo
 
 int creaMalla(Malla *cab, int n, int m); // Crea la matriz donde iran los personajes y escenario.
 int creaNodo(Malla **cab, int x, int y); // Pide memoria para la creación de un nodo.
-int enlaza(Malla *m);
+void dibujaSprite(String nombre, int x, int y); // Abre un archivo de texto y comienza a dibujar a partir de las coordenadas.
+int enlaza(Malla *m); // Completa los enlaces de toda la malla.
 int insertaHorizontal(Malla *cab, int x, int y);
 int insertaVertical(Malla *cab, int x, int y);
 void iniciaEntorno(); // Se encarga de iniciar la parte gráfica y obtener las imágenes del juego.
-void juego(); // Inicia juego
+void juego(int nivel); // Inicia juego
 void menu(); // Dibujar el menú principal
+void pintaAmbiente(int); // Dibuja todo el escenario
 void portada(); // Dibujar la pantalla principal
 
 // Variables globales.
@@ -76,18 +79,47 @@ int creaNodo(Malla **cab, int x, int y)
     return(res);
 }
 
+void dibujaSprite(String nombre, int x, int y)
+{
+    int i, j, n, m, color, xIni, yIni;
+    FILE *f;
+    xIni = x;
+
+    //strcat(nombre,".txt");
+    //sprintf(nombre, "%s.txt", nombre);
+    f = fopen(nombre,"r");
+    if(f)
+    {
+        fscanf(f, "%d\t%d\n", &n, &m);
+        for(i=0; i<n; i++, fscanf(f,"\n"), y+=PIXEL_TAM)
+            for(j=0, x=xIni; j<m; j++, x+=PIXEL_TAM)
+            {
+                fscanf(f,"%d ", &color);
+                if(color!=1010)
+                {
+                    setfillstyle(1, color);
+                    bar(x, y, x+PIXEL_TAM, y+PIXEL_TAM);
+                }
+            }
+    }
+    fclose(f);
+}
+
 int enlaza(Malla *l)
 {
-    Malla *aux,*aux2,*aux3,*aux4;
+    Malla *auxH, // Recorrer en horizontal
+          *auxA, // Recorrer hacia abajo
+          *aux3,
+          *aux4;
     int res=0;
 
     if(l)
-        for(aux=l; aux; aux=aux->der)
-            for(aux2=aux; aux2; aux2=aux2->abajo)
-                if(aux2->abajo && aux->der)
+        for(auxH=l; auxH; auxH=auxH->der)
+            for(auxA=auxH; auxA; auxA=auxA->abajo)
+                if(auxA->abajo && auxH->der)
                 {
-                    aux3 = aux->der->abajo;
-                    aux4 = aux->abajo;
+                    aux3 = auxH->der->abajo;
+                    aux4 = auxH->abajo;
                     while(aux3 && aux4)
                     {
                         aux3->izq = aux4;
@@ -130,7 +162,7 @@ int insertaHorizontal(Malla *cab, int x, int y)
 
     if(creaNodo(&nuevo, x, y))
         if(!cab)
-         cab=nuevo;
+            cab=nuevo;
         else
         {
             for(aux=cab; aux!=NULL && band; aux=aux->der)
@@ -156,10 +188,6 @@ int insertaVertical(Malla *l, int x, int y)
         if(!l)
         {
             l=nuevo;
-            setcolor(5);
-            setfillstyle(1, rand()%15);
-            if(rand()%2)
-                bar((l)->x1, (l)->y1, (l)->x2, (l)->y2);
         }
         else
         {
@@ -176,16 +204,38 @@ int insertaVertical(Malla *l, int x, int y)
     return(res);
 }
 
-void juego()
+void juego(int nivel)
 {
-    // Borra todo y pone el fondo.
-    setfillstyle(1, COLOR(79, 182, 225));
-    bar(0,0, WIDTH, HEIGHT);
-    putimage(0, 400, imagenes[1], COPY_PUT);
+    char tecla;
+    int spriteH, // Altura de un sprite
+        pagina = 1;
+
+    srand(time(NULL));
+    spriteH = 592 - PIXEL_TAM*23;
 
     // Inicia malla
     Malla *cab = NULL;
 	creaMalla(cab, 13, 4);
+
+    setvisualpage(pagina);
+    do
+    {
+        setactivepage(pagina=!pagina);
+        pintaAmbiente(pagina);
+        setvisualpage(pagina);
+
+        if(kbhit())
+        {
+            putimage(0, 400, imagenes[1], COPY_PUT);
+            switch(tecla = getch())
+            {
+                case 72:
+                    dibujaSprite("dino1.0.txt", 10, spriteH);
+                    delay(200);
+                    break;
+            }
+        }
+    }while(tecla!=27);
     /*for(i=0;i<226; i++)
     {
         //setfillstyle(1, COLOR(0,i,i));
@@ -229,7 +279,7 @@ void menu()
     switch(op)
     {
         case 0:
-            juego();
+            juego(1);
             break;
         case 1:
             //imprimeRegistro();
@@ -241,6 +291,22 @@ void menu()
             //creditos();
             break;
     }
+}
+
+void pintaAmbiente(int pagina)
+{
+    String skin;
+    // Borra todo y pone el fondo.
+    setfillstyle(1, COLOR(79, 182, 225));
+    bar(0,0, WIDTH, HEIGHT);
+    putimage(0, 400, imagenes[1], COPY_PUT);
+
+    // Dino
+    strcpy(skin, "dino1");
+    sprintf(skin, "%s.%d.txt", skin, pagina);
+    putimage(0, 400, imagenes[1], COPY_PUT);
+    dibujaSprite(skin, 10, 592);
+    delay(120);
 }
 
 void portada()
