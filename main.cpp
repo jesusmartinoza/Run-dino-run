@@ -204,9 +204,13 @@ int insertaVertical(Malla *l, int x, int y)
     if(creaNodo(&nuevo,x,y))
     {
         if(!l)
-            l=nuevo;
-        else
         {
+            l=nuevo;
+            setcolor(5);
+            setfillstyle(1, rand()%15);
+            if(rand()%2)
+                bar((l)->x1, (l)->y1, (l)->x2, (l)->y2);
+        } else {
             aux=l;
             while(aux->abajo)
                 aux=aux->abajo;
@@ -230,10 +234,11 @@ void juego(int nivel, int vidas)
     srand(time(NULL));
     spriteH = 592 - PIXEL_TAM*23;
 
+	pintaAmbiente(pagina);
     // Inicia malla
     Malla *cab = NULL;
 	creaMalla(cab, 13, 4);
-
+    getch();
     setvisualpage(pagina);
     do
     {
@@ -369,22 +374,32 @@ void portada()
 
 void tienda()
 {
-    int i, xi;
+    int i, xi, pag = 1;
+    char tecla;
     String aux;
 
-    setfillstyle(1, COLOR(79, 182, 225));
-    bar(0,400, WIDTH, HEIGHT);
-
-    for(i=0, xi=WIDTH/3; i<NSKINS; i++, xi+=PIXEL_TAM*25)
+    setvisualpage(pag);
+    while(tecla!=27)
     {
-        sprintf(aux, "dino%d.0.txt", i+1);
-        dibujaSprite(aux, xi, 450);
-        if(skin==i+1)
+        setactivepage(pag=!pag);
+        setfillstyle(1, COLOR(79, 182, 225));
+        bar(0,0, WIDTH, HEIGHT);
+        if(kbhit())
+            tecla = getch();
+
+        for(i=0, xi=WIDTH/3; i<NSKINS; i++, xi+=PIXEL_TAM*25)
         {
-            setfillstyle(1, 0x00f);
-            bar(xi, 450+PIXEL_TAM*25, xi+PIXEL_TAM*20, 460+PIXEL_TAM*25);
+            sprintf(aux, "dino%d.%d.txt", i+1,pag);
+            dibujaSprite(aux, xi, 450);
+            if(skin==i+1)
+            {
+                setfillstyle(1, 0x00f);
+                bar(xi, 450+PIXEL_TAM*25, xi+PIXEL_TAM*20, 460+PIXEL_TAM*25);
+            }
         }
+        setvisualpage(pag);
+        delay(80);
     }
-    getch();
+
     iniciaEntorno();
 }
