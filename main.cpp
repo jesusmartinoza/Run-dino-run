@@ -36,6 +36,7 @@ void juego(int nivel, int vidas); // Contiene todo el juego.
 void obtenerDatos(int *huesos, int *skin); // Lee de un archivo externo los huesos obtenidos del jugador y su skin.
 void menu(); // Dibujar el menú principal.
 void pintaAmbiente(int pagina); // Dibuja todo el escenario.
+void pintaEscenario(Malla *cab); // Dibuja los sprites de acuerdo a los valores de la malla.
 void portada(); // Dibujar la pantalla principal.
 void tienda(); // Dibuja todos los articulos disponibles.
 
@@ -92,14 +93,14 @@ void dibujaSprite(String nombre, int x, int y)
 
     //strcat(nombre,".txt");
     //sprintf(nombre, "%s.txt", nombre);
+    int arr[23][23];
 
     f = fopen(nombre,"r");
     if(f)
     {
         fscanf(f, "%d\t%d\n", &n, &m);
-
         for(i=0; i<n; i++, fscanf(f,"\n"), y+=PIXEL_TAM)
-            for(j=0, x=xIni; j<m; j++, x+=PIXEL_TAM)
+            for(j=0, x=xIni; j<m; j++, x+=PIXEL_TAM )
             {
                 fscanf(f,"%d ", &color);
                 if(color!=1010)
@@ -109,7 +110,17 @@ void dibujaSprite(String nombre, int x, int y)
                 }
             }
     }
+
     fclose(f);
+
+    /*for(i=0; i<m; i++, y+=PIXEL_TAM)
+        for(j=0, x=xIni; j<n; j++, x+=PIXEL_TAM)
+            if(arr[j][i]!=1010)
+            {
+                setfillstyle(1, arr[j][i]);
+                bar(x, y, x+PIXEL_TAM, y+PIXEL_TAM);
+            }*/
+
 }
 
 void dibujaVidas(int vidas)
@@ -129,7 +140,7 @@ int enlaza(Malla *l)
     int res=0;
 
     if(l)
-        for(auxH=l; auxH; auxH=auxH->der)
+        for(auxH=l; auxH; auxH=auxH->der, printf("\nh"))
             for(auxA=auxH; auxA; auxA=auxA->abajo)
                 if(auxA->abajo && auxH->der)
                 {
@@ -205,11 +216,12 @@ int insertaVertical(Malla *l, int x, int y)
     {
         if(!l)
         {
+            nuevo->existe = rand()%2;
+            printf("\nInserta %d", nuevo->existe);
             l=nuevo;
-            setcolor(5);
-            setfillstyle(1, rand()%15);
+            /*setfillstyle(1, rand()%15);
             if(rand()%2)
-                bar((l)->x1, (l)->y1, (l)->x2, (l)->y2);
+                bar((l)->x1, (l)->y1, (l)->x2, (l)->y2);*/
         } else {
             aux=l;
             while(aux->abajo)
@@ -237,12 +249,12 @@ void juego(int nivel, int vidas)
 	pintaAmbiente(pagina);
     // Inicia malla
     Malla *cab = NULL;
-	creaMalla(cab, 13, 4);
-    getch();
+	creaMalla(cab, 13, 3);
     setvisualpage(pagina);
     do
     {
         setactivepage(pagina=!pagina);
+        pintaEscenario(cab);
         pintaAmbiente(pagina);
         dibujaVidas(vidas);
         setvisualpage(pagina);
@@ -346,6 +358,17 @@ void pintaAmbiente(int pagina)
     putimage(0, 400, imagenes[1], COPY_PUT);
     dibujaSprite(nSkin, 10, 592);
     delay(120);
+}
+
+void pintaEscenario(Malla *cab)
+{
+    Malla *auxH, // Recorrer en horizontal
+          *auxA; // Recorrer hacia abajo
+
+    for(auxH=cab; cab; printf("\n%d",1), cab=cab->izq)
+        for(auxA=auxH; auxA; auxA=auxA->abajo, printf("\n%d", auxA->existe))
+            if(auxA->existe)
+                dibujaSprite("hueso.txt", auxA->x1, auxA->y1);
 }
 
 void portada()
