@@ -7,6 +7,8 @@
 #define HEIGHT 700
 #define NIMAGENES 2 // Numero de imagenes externas.
 #define NSKINS 3
+#define N 7
+#define M 9
 #define PIXEL_TAM 4
 #define WIDTH 1040
 
@@ -15,28 +17,23 @@ typedef char String[50];
 // Estructura principal del juego.
 typedef struct nodo
 {
-    int x1,y1;
-    int x2,y2;
-    int existe;
+    int tipo;
     struct nodo *arriba;
     struct nodo *abajo;
     struct nodo *izq;
     struct nodo *der;
-}Malla;
+}*Malla;
 
-int creaMalla(Malla *cab, int n, int m); // Crea la matriz donde iran los personajes y escenario.
-int creaNodo(Malla **cab, int x, int y); // Pide memoria para la creación de un nodo.
+int creaMalla(Malla *cab, Malla *dino); // Crea la matriz donde iran los personajes y escenario.
+int creaNodo(Malla *nodo, int dato); // Pide memoria para la creación de un nodo.
 void dibujaSprite(String nombre, int x, int y); // Abre un archivo de texto y comienza a dibujar a partir de las coordenadas.
 void dibujaVidas(int vidas); // Durante el juego dibuja las vidas del jugador.
-int enlaza(Malla *m); // Completa los enlaces de toda la malla.
-int insertaHorizontal(Malla *cab, int x, int y);
-int insertaVertical(Malla *cab, int x, int y);
 void iniciaEntorno(); // Se encarga de iniciar la parte gráfica y obtener las imágenes del juego.
 void juego(int nivel, int vidas); // Contiene todo el juego.
 void obtenerDatos(int *huesos, int *skin); // Lee de un archivo externo los huesos obtenidos del jugador y su skin.
 void menu(); // Dibujar el menú principal.
 void pintaAmbiente(int pagina); // Dibuja todo el escenario.
-void pintaEscenario(Malla *cab); // Dibuja los sprites de acuerdo a los valores de la malla.
+void pintaEscenario(Malla cab); // Dibuja los sprites de acuerdo a los valores de la malla.
 void portada(); // Dibujar la pantalla principal.
 void tienda(); // Dibuja todos los articulos disponibles.
 
@@ -53,34 +50,59 @@ int main()
     return 0;
 }
 
-int creaMalla(Malla *cab, int n, int m)
+int creaMalla(Malla *cab, Malla *dino)
 {
-    int i, j, x=0, y=285, y2=y+CUADRO_TAM, res=0;
-    Malla *aux;
-    for(i=0; i<n; i++)
-    {
-        insertaHorizontal(cab, x+CUADRO_TAM*i, y);
-        for(aux=cab; aux; aux=aux->der);
-        for(j=0; j<m; j++)
-            insertaVertical(aux, x+CUADRO_TAM*i, y2+CUADRO_TAM*j);
-    }
-    res = enlaza(cab);
-    return res;
+    Malla cx1, cx2, cy, cxAux;
+    int res=1;
+    int x,y;
+    for(y=0; y<M && res; y++, cxAux=cy)
+        for(x=0; x<N && res; x++)
+        {
+            if( x==3 && y==M-1)
+            {
+                res=creaNodo(&cx1,0);
+                *dino=cx1;
+            }
+            else
+                res=creaNodo(&cx1,0);
+            if(res)
+                if(!y)
+                    if(!x)
+                        *cab=cx2=cy=cx1;
+                    else
+                    {
+                        cx1->izq = cx2;
+                        cx2->der = cx1;;
+                        cx2=cx1;
+                    }
+                else
+                {
+                    if(!x)
+                        cx2=cy=cx1;
+                    else
+                    {
+                        cx1->izq = cx2;
+                        cx2->der = cx1;
+                        cx2 = cx1;
+                    }
+                    cx1->arriba=cxAux;
+                    cxAux->abajo=cx1;
+                    cxAux = cxAux->der;
+                }
+        }
+
+    return(res);
 }
 
-int creaNodo(Malla **cab, int x, int y)
+int creaNodo(Malla *nodo, int dato)
 {
-    int res = 0;
-    *cab = (Malla*)malloc(sizeof(Malla));
-
-    if(*cab)
+    int res=0;
+    *nodo = (Malla) malloc(sizeof(struct nodo));
+    if(nodo)
     {
-        (*cab)->x1=x;
-        (*cab)->y1=y;
-        (*cab)->x2=x+CUADRO_TAM;
-        (*cab)->y2=y+CUADRO_TAM;
-        (*cab)->arriba=(*cab)->abajo=(*cab)->izq=(*cab)->der=NULL;
         res=1;
+        (*nodo)->tipo=dato;
+        (*nodo)->abajo=(*nodo)->arriba=(*nodo)->izq=(*nodo)->der=NULL;
     }
     return(res);
 }
@@ -100,9 +122,10 @@ void dibujaSprite(String nombre, int x, int y)
     {
         fscanf(f, "%d\t%d\n", &n, &m);
         for(i=0; i<n; i++, fscanf(f,"\n"), y+=PIXEL_TAM)
-            for(j=0, x=xIni; j<m; j++, x+=PIXEL_TAM )
+            for(j=0, x=xIni; j<m; j++, x+=PIXEL_TAM)
             {
                 fscanf(f,"%d ", &color);
+                arr[i][j] = color;
                 if(color!=1010)
                 {
                     setfillstyle(1, color);
@@ -113,14 +136,15 @@ void dibujaSprite(String nombre, int x, int y)
 
     fclose(f);
 
+
     /*for(i=0; i<m; i++, y+=PIXEL_TAM)
         for(j=0, x=xIni; j<n; j++, x+=PIXEL_TAM)
             if(arr[j][i]!=1010)
             {
                 setfillstyle(1, arr[j][i]);
                 bar(x, y, x+PIXEL_TAM, y+PIXEL_TAM);
-            }*/
-
+            }
+    */
 }
 
 void dibujaVidas(int vidas)
@@ -129,32 +153,6 @@ void dibujaVidas(int vidas)
 
     for(i=0, xi = 20; i<vidas; i++, xi+=PIXEL_TAM*20)
         dibujaSprite("corazon.txt", xi, 120);
-}
-
-int enlaza(Malla *l)
-{
-    Malla *auxH, // Recorrer en horizontal
-          *auxA, // Recorrer hacia abajo
-          *aux3,
-          *aux4;
-    int res=0;
-
-    if(l)
-        for(auxH=l; auxH; auxH=auxH->der, printf("\nh"))
-            for(auxA=auxH; auxA; auxA=auxA->abajo)
-                if(auxA->abajo && auxH->der)
-                {
-                    aux3 = auxH->der->abajo;
-                    aux4 = auxH->abajo;
-                    while(aux3 && aux4)
-                    {
-                        aux3->izq = aux4;
-                        aux4->der = aux3;
-                        aux3 = aux3->abajo;
-                        aux4 = aux4->abajo;
-                    }
-                }
-    return(res);
 }
 
 void iniciaEntorno()
@@ -184,79 +182,51 @@ void iniciaEntorno()
     portada();
 }
 
-int insertaHorizontal(Malla *cab, int x, int y)
-{
-    int res=0, band=1;
-    Malla *nuevo,*aux;
-
-    if(creaNodo(&nuevo, x, y))
-        if(!cab)
-            cab=nuevo;
-        else
-        {
-            for(aux=cab; aux!=NULL && band; aux=aux->der)
-                if(aux->der==NULL)
-                {
-                    aux->der=nuevo;
-                    nuevo->izq=aux;
-                }
-            setcolor(11);
-            rectangle(nuevo->x1,nuevo->y1,nuevo->x2,nuevo->y2);
-        }
-
-    return res;
-}
-
-int insertaVertical(Malla *l, int x, int y)
-{
-    int res=1;
-    Malla *nuevo, *aux;
-
-    if(creaNodo(&nuevo,x,y))
-    {
-        if(!l)
-        {
-            nuevo->existe = rand()%2;
-            printf("\nInserta %d", nuevo->existe);
-            l=nuevo;
-            /*setfillstyle(1, rand()%15);
-            if(rand()%2)
-                bar((l)->x1, (l)->y1, (l)->x2, (l)->y2);*/
-        } else {
-            aux=l;
-            while(aux->abajo)
-                aux=aux->abajo;
-            aux->abajo=nuevo;
-            nuevo->arriba=aux;
-            setcolor(11);
-            rectangle(nuevo->x1,nuevo->y1,nuevo->x2,nuevo->y2);
-        }
-        res=1;
-    }
-    return(res);
-}
-
 void juego(int nivel, int vidas)
 {
     char tecla;
-    int spriteH, // Altura de un sprite
-        pagina = 1;
+    Malla cab = NULL, dino, aux;
+    int spriteH, // Altura de cualquier sprite
+        pagina = 1,
+        vel = 0,
+        i, j = 0,
+        dinoPos = 3, rpos,rposant, vselec;
     String nSkin;
 
     srand(time(NULL));
     spriteH = 592 - PIXEL_TAM*23;
 
 	pintaAmbiente(pagina);
+
     // Inicia malla
-    Malla *cab = NULL;
-	creaMalla(cab, 13, 3);
+	creaMalla(&cab, &dino);
     setvisualpage(pagina);
     do
     {
         setactivepage(pagina=!pagina);
-        pintaEscenario(cab);
         pintaAmbiente(pagina);
+        pintaEscenario(cab);
         dibujaVidas(vidas);
+        if(j==6)
+        {
+            j=0;
+            vel+=10;
+            aux=cab;
+            vselec=rand()%2+2;
+            do
+                rpos=rand()%7;
+            while(rpos==rposant);
+
+            rposant=rpos;
+            for(i=0;i<rpos;i++)
+                aux=(aux->der);
+
+            if(vselec==2)
+                aux->tipo=2;
+            else
+                aux->tipo=3;
+        }
+        j++;
         setvisualpage(pagina);
 
         if(kbhit())
@@ -354,21 +324,63 @@ void pintaAmbiente(int pagina)
     putimage(0, 400, imagenes[1], COPY_PUT);
 
     // Dino
-    sprintf(nSkin, "dino%d.%d.txt", skin, pagina);
+    /*sprintf(nSkin, "dino%d.%d.txt", skin, pagina);
     putimage(0, 400, imagenes[1], COPY_PUT);
     dibujaSprite(nSkin, 10, 592);
+    delay(120);*/
     delay(120);
 }
 
-void pintaEscenario(Malla *cab)
+void pintaEscenario(Malla cab)
 {
-    Malla *auxH, // Recorrer en horizontal
-          *auxA; // Recorrer hacia abajo
+    Malla auxy;
+    int i,j;
+    auxy=cab;
+    for(j=0;j<M;j++)
+    {
+        for(i=0;i<N;i++)
+        {
+            if(cab->tipo==2)
+            {
+                dibujaSprite("dino3.0.txt",15+i*PIXEL_TAM,50*j);
+            }
+            else
+            {
+                if(cab->tipo==3)
+                {
+                dibujaSprite("dino3.1.txt",15+i*PIXEL_TAM,50*j);
 
-    for(auxH=cab; cab; printf("\n%d",1), cab=cab->izq)
-        for(auxA=auxH; auxA; auxA=auxA->abajo, printf("\n%d", auxA->existe))
-            if(auxA->existe)
-                dibujaSprite("hueso.txt", auxA->x1, auxA->y1);
+                }
+            }
+            cab=cab->der;
+        }
+        if(j!=(M-1))
+        {
+            auxy=auxy->abajo;
+            cab=auxy;
+        }
+    }
+    cab=auxy;
+    for(j=0;j<M;j++)
+    {
+        for(i=0;i<N;i++)
+        {
+            if(j!=M-1)
+            {
+               cab->tipo=cab->arriba->tipo;
+               cab=cab->der;
+            }
+            else
+            {
+                cab->tipo=0;
+                cab=cab->der;
+            }
+
+
+        }
+        auxy=auxy->arriba;
+        cab=auxy;
+    }
 }
 
 void portada()
