@@ -27,15 +27,18 @@ typedef struct nodo
 
 int creaMalla(Malla *cab, Malla *dino); // Crea la matriz donde iran los personajes y escenario.
 int creaNodo(Malla *nodo, int dato); // Pide memoria para la creación de un nodo.
-void creditos();
+void creditos(); // Imprime creditos.
+void dibujaHuesos(int huesos); // Recib el numero de huesos y los muestra en pantalla.
 void dibujaSprite(String nombre, int x, int y); // Abre un archivo de texto y comienza a dibujar a partir de las coordenadas.
 void dibujaVidas(int vidas); // Durante el juego dibuja las vidas del jugador.
+void escribeAjustes(int huesos);
 void iniciaEntorno(); // Se encarga de iniciar la parte gráfica y obtener las imágenes del juego.
-void juego(int nivel, int vidas); // Contiene todo el juego.
+void juego(int vidas); // Contiene todo el juego.
 void obtenerDatos(int *huesos, int *skin); // Lee de un archivo externo los huesos obtenidos del jugador y su skin.
 void menu(); // Dibujar el menú principal.
 void pintaAmbiente(int pagina, int jungla); // Dibuja todo el escenario.
 void pintaEscenario(Malla cab); // Dibuja los sprites de acuerdo a los valores de la malla.
+void popup(); // Muestra en pantalla un mensaje.
 void portada(); // Dibujar la pantalla principal.
 void tienda(); // Dibuja todos los articulos disponibles.
 
@@ -113,6 +116,32 @@ void creditos()
     getch();
     iniciaEntorno();
 }
+
+void escribeAjustes(int huesos)
+{
+    FILE *f;
+
+    f = fopen("ajustes.txt", "w");
+    if(f)
+        fprintf(f, "%X %d", huesos, skin);
+
+    fclose(f);
+}
+
+void dibujaHuesos(int huesos)
+{
+    String aux;
+
+    setfillstyle(1, COLOR(79, 182, 225));
+    setbkcolor(COLOR(79, 182, 225));
+    setcolor(WHITE);
+
+    dibujaSprite("hueso.txt", WIDTH-80, -20);
+    sprintf(aux, "%d", huesos);
+    settextstyle(3, HORIZ_DIR, 49);
+    outtextxy(WIDTH-180, 25, aux);
+}
+
 void dibujaSprite(String nombre, int x, int y)
 {
     int i, j, n, m, color, xIni, yIni, arr[23][24];
@@ -201,17 +230,16 @@ void iniciaEntorno()
     portada();
 }
 
-void juego(int nivel, int vidas)
+void juego(int vidas)
 {
     char tecla;
     Malla cab = NULL, dino, aux;
     int spriteH, // Altura de cualquier sprite
-        salto = 0,
-        pagina = 1,
         retraso = 180,
+        pagina = 1,
         i, j = 0,
-        dinoPos = 3,
-        jungla = 1;
+        huesos,
+        jungla = 0;
     String nSkin;
 
     srand(time(NULL));
@@ -219,7 +247,7 @@ void juego(int nivel, int vidas)
     sprintf(nSkin, "dino%d.0.txt", skin);
 
 	pintaAmbiente(pagina, jungla);
-
+    obtenerDatos(&huesos, &i);
     // Inicia malla
 	creaMalla(&cab, &dino);
 	setactivepage(pagina);
@@ -234,11 +262,12 @@ void juego(int nivel, int vidas)
     do
     {
         setactivepage(pagina=!pagina);
-        jungla+=jungla<=5?1:-5;
+        jungla+=jungla<=4?1:-4;
         pintaAmbiente(pagina, jungla);
         delay(retraso);
         pintaEscenario(cab);
         dibujaVidas(vidas);
+        dibujaHuesos(huesos);
         if(j>6)
         {
             retraso-=retraso>50?8:0;
@@ -250,7 +279,6 @@ void juego(int nivel, int vidas)
             for(i=0; i<M-1; i++)
                 aux = aux->abajo;
 
-
             aux->tipo=rand()%4+1;
         }
         j+=rand()%3;
@@ -258,16 +286,29 @@ void juego(int nivel, int vidas)
 
         if(kbhit())
         {
+            dino = dino->arriba->arriba;
             tecla = getch();
             putimage(0, 400, imagenes[jungla], COPY_PUT);
             pintaEscenario(cab);
-            dibujaSprite(nSkin, 10, spriteH);
-            salto = 1;
-            delay(retraso/2);
+            dibujaSprite(nSkin, 100, spriteH);
+            delay(retraso);
+            dino = dino->abajo->abajo;
         }
-        salto = 0;
-    }while(tecla!=27);
 
+        switch(dino->tipo)
+        {
+            case 1:huesos+=5; break;
+            case 2:huesos++; break;
+            case 3:vidas--;  break;
+            case 4:vidas--;  break;
+        }
+        printf("\nVidas %d\tHuesos %d", vidas, huesos);
+
+    }while(vidas>0);
+
+    escribeAjustes(huesos);
+    popup();
+    getch();
     iniciaEntorno();
     /*for(i=0;i<226; i++)
     {
@@ -314,7 +355,7 @@ void menu()
     switch(op)
     {
         case 0:
-            juego(1, 3);
+            juego(3);
             break;
         case 1:
             tienda();
@@ -343,11 +384,12 @@ void obtenerDatos(int *huesos, int *skin)
 void pintaAmbiente(int pagina, int jungla)
 {
     String nSkin;
-
+    setfillstyle(1, COLOR(79, 182, 225));
+    bar(0, 0, WIDTH, 400);
     // Dino
     sprintf(nSkin, "dino%d.%d.txt", skin, pagina);
     putimage(0, 400, imagenes[rand()%3+1], COPY_PUT);
-    dibujaSprite(nSkin, 10, 592);
+    dibujaSprite(nSkin, 100, 592);
 }
 
 void pintaEscenario(Malla cab)
@@ -413,6 +455,34 @@ void pintaEscenario(Malla cab)
     }
 }
 
+void popup()
+{
+    int x1,x2,y1,y2, i,
+        nRec = 13; // Numero de rectangulos
+    x1 = x2 = (WIDTH/2);
+    y1 = y2 = (HEIGHT/2);
+
+    setfillstyle(1,0x00CCFF);
+    for(i=0; i<nRec; x1-=15, y1-=10, x2+=15, y2+=10, i++)
+    {
+        bar(x1, y1, x2, y2);
+        delay(15);
+    }
+
+    // ¡PERDISTE!
+    setbkcolor(0x00CCFF);
+    setcolor(0x0054D3);
+    settextstyle(3, HORIZ_DIR, 6);
+    outtextxy(WIDTH/2-textwidth("¡PERDISTE!")/2, y1+textheight("P")/2, "¡PERDISTE!");
+
+    setcolor(0x4b78F2);
+    settextstyle(3, HORIZ_DIR, 3);
+    outtextxy(WIDTH/2-textwidth("Presiona cualquier tecla")/2, y1+textheight("P")*4, "Presiona cualquier tecla");
+
+    settextstyle(3, HORIZ_DIR, 3);
+    outtextxy(WIDTH/2-textwidth("para continuar")/2, y1+textheight("P")*5, "para continuar");
+}
+
 void portada()
 {
     int i, huesos;
@@ -429,11 +499,7 @@ void portada()
 
     // Escribe numero de huesos
     obtenerDatos(&huesos, &skin);
-    dibujaSprite("hueso.txt", WIDTH-80, -20);
-    sprintf(aux, "%d", huesos);
-    settextstyle(3, HORIZ_DIR, 49);
-    outtextxy(WIDTH-180, 25, aux);
-
+    dibujaHuesos(huesos);
     menu();
 }
 
