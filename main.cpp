@@ -6,9 +6,10 @@
 #define CUADRO_TAM 80 // Tamaño de cada cuadro en la malla.
 #define HEIGHT 700
 #define NIMAGENES 2 // Numero de imagenes externas.
+#define NOBJ 50
 #define NSKINS 3
-#define N 7
-#define M 9
+#define N 13
+#define M 3
 #define PIXEL_TAM 4
 #define WIDTH 1040
 
@@ -45,8 +46,6 @@ int main()
 {
     initwindow(WIDTH, HEIGHT, "Run dino run");
     iniciaEntorno();
-
-    getch();
     return 0;
 }
 
@@ -115,7 +114,6 @@ void dibujaSprite(String nombre, int x, int y)
 
     //strcat(nombre,".txt");
     //sprintf(nombre, "%s.txt", nombre);
-    int arr[23][23];
 
     f = fopen(nombre,"r");
     if(f)
@@ -125,7 +123,6 @@ void dibujaSprite(String nombre, int x, int y)
             for(j=0, x=xIni; j<m; j++, x+=PIXEL_TAM)
             {
                 fscanf(f,"%d ", &color);
-                arr[i][j] = color;
                 if(color!=1010)
                 {
                     setfillstyle(1, color);
@@ -133,7 +130,6 @@ void dibujaSprite(String nombre, int x, int y)
                 }
             }
     }
-
     fclose(f);
 
 
@@ -187,10 +183,11 @@ void juego(int nivel, int vidas)
     char tecla;
     Malla cab = NULL, dino, aux;
     int spriteH, // Altura de cualquier sprite
+        salto = 0,
         pagina = 1,
-        vel = 0,
+        retraso = 350,
         i, j = 0,
-        dinoPos = 3, rpos,rposant, vselec;
+        dinoPos = 3;
     String nSkin;
 
     srand(time(NULL));
@@ -205,44 +202,43 @@ void juego(int nivel, int vidas)
     {
         setactivepage(pagina=!pagina);
         pintaAmbiente(pagina);
+        delay(retraso);
         pintaEscenario(cab);
         dibujaVidas(vidas);
-        if(j==6)
+        if(j>6)
         {
+            retraso-=retraso>50?10:0;
             j=0;
-            vel+=10;
             aux=cab;
-            vselec=rand()%2+2;
-            do
-                rpos=rand()%7;
-            while(rpos==rposant);
-
-            rposant=rpos;
-            for(i=0;i<rpos;i++)
+            for(i=0;i<N-1;i++)
                 aux=(aux->der);
 
-            if(vselec==2)
-                aux->tipo=2;
-            else
-                aux->tipo=3;
+            for(i=0;i<M-1;i++)
+                aux=(aux->abajo);
+
+            aux->tipo=rand()%3+1;
         }
-        j++;
+        j+=rand()%3;
         setvisualpage(pagina);
 
         if(kbhit())
         {
             putimage(0, 400, imagenes[1], COPY_PUT);
+            dibujaSprite(nSkin, 10, spriteH);
+            pintaEscenario(cab);
             switch(tecla = getch())
             {
                 case 72:
                     strcpy(nSkin, "");
                     sprintf(nSkin, "dino%d.0.txt", skin);
                     dibujaSprite(nSkin, 10, spriteH);
-                    delay(200);
+                    salto = 1;
                     break;
             }
         }
+        salto = 0;
     }while(tecla!=27);
+
     iniciaEntorno();
     /*for(i=0;i<226; i++)
     {
@@ -324,36 +320,32 @@ void pintaAmbiente(int pagina)
     putimage(0, 400, imagenes[1], COPY_PUT);
 
     // Dino
-    /*sprintf(nSkin, "dino%d.%d.txt", skin, pagina);
+    sprintf(nSkin, "dino%d.%d.txt", skin, pagina);
     putimage(0, 400, imagenes[1], COPY_PUT);
     dibujaSprite(nSkin, 10, 592);
-    delay(120);*/
-    delay(120);
 }
 
 void pintaEscenario(Malla cab)
 {
     Malla auxy;
-    int i,j;
+    int i, j, x, y;
     auxy=cab;
-    for(j=0;j<M;j++)
-    {
-        for(i=0;i<N;i++)
-        {
-            if(cab->tipo==2)
-            {
-                dibujaSprite("dino3.0.txt",15+i*PIXEL_TAM,50*j);
-            }
-            else
-            {
-                if(cab->tipo==3)
-                {
-                dibujaSprite("dino3.1.txt",15+i*PIXEL_TAM,50*j);
 
+    x = 0;
+    y = 440;
+    for(j=0; j<M; j++, y+=CUADRO_TAM, x=0)
+    {
+        for(i=0; i<N; i++, x+=CUADRO_TAM, cab=cab->der)
+            if(cab->tipo)
+                switch(cab->tipo)
+                {
+                    case 1:
+                        dibujaSprite("hueso.txt", x, y);
+                        break;
+                    case 2:
+                        dibujaSprite("dino2.0.txt", x, y);
                 }
-            }
-            cab=cab->der;
-        }
+
         if(j!=(M-1))
         {
             auxy=auxy->abajo;
@@ -361,24 +353,24 @@ void pintaEscenario(Malla cab)
         }
     }
     cab=auxy;
-    for(j=0;j<M;j++)
+    for(i=0;i<N;i++)
     {
-        for(i=0;i<N;i++)
+        for(j=0;j<M;j++)
         {
-            if(j!=M-1)
+            if(i!=N-1)
             {
-               cab->tipo=cab->arriba->tipo;
-               cab=cab->der;
+               cab->tipo=cab->der->tipo;
+               cab=cab->arriba;
+               printf("");
             }
             else
             {
+                //cab->tipo=0;
                 cab->tipo=0;
-                cab=cab->der;
+                cab=cab->arriba;
             }
-
-
         }
-        auxy=auxy->arriba;
+        auxy=auxy->der;
         cab=auxy;
     }
 }
