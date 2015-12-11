@@ -5,7 +5,7 @@
 
 #define CUADRO_TAM 40 // Tamaño de cada cuadro en la malla.
 #define HEIGHT 700
-#define NIMAGENES 8 // Numero de imagenes externas.
+#define NIMAGENES 9 // Numero de imagenes externas.
 #define NOBJ 50
 #define NSKINS 3
 #define N 26
@@ -25,6 +25,7 @@ typedef struct nodo
     struct nodo *der;
 }*Malla;
 
+void ayuda();
 int compra(int id); // Compra el articulo.
 int creaMalla(Malla *cab, Malla *dino); // Crea la matriz donde iran los personajes y escenario.
 int creaNodo(Malla *nodo, int dato); // Pide memoria para la creación de un nodo.
@@ -52,6 +53,12 @@ int main()
     initwindow(WIDTH, HEIGHT, "Run dino run");
     iniciaEntorno();
     return 0;
+}
+
+void ayuda()
+{
+    putimage(0,0, imagenes[7], COPY_PUT);
+    menu();
 }
 
 int compra(int id)
@@ -245,6 +252,7 @@ void iniciaEntorno()
         "img/jungla4.jpg",
         "img/jungla5.jpg",
         "img/creditos.jpg",
+        "img/ayuda.jpg",
         "img/logotipo.gif"
     };
 
@@ -260,6 +268,12 @@ void iniciaEntorno()
     // Creditos
     bar(0,0,WIDTH,HEIGHT);
     readimagefile(nombres[i],0,0,1040,390);
+    imagenes[i]  = malloc(imagesize(0,0,1040,390));
+    getimage(0,0,1040,390, imagenes[i]);
+
+    // Ayuda
+    bar(0,0,WIDTH,HEIGHT);
+    readimagefile(nombres[++i],0,0,1040,390);
     imagenes[i]  = malloc(imagesize(0,0,1040,390));
     getimage(0,0,1040,390, imagenes[i]);
 
@@ -344,7 +358,6 @@ void juego(int vidas)
             case 3:vidas--;  break;
             case 4:vidas--;  break;
         }
-        printf("\nVidas %d\tHuesos %d", vidas, huesos);
 
     }while(vidas>0);
 
@@ -403,7 +416,7 @@ void menu()
             tienda();
             break;
         case 2:
-            //ayuda("ayuda.txt", 0, HEIGHT/2-100, WIDTH, HEIGHT);
+            ayuda();
             break;
         case 3:
             creditos();
