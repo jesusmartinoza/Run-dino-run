@@ -3,12 +3,12 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define CUADRO_TAM 80 // Tamaño de cada cuadro en la malla.
+#define CUADRO_TAM 40 // Tamaño de cada cuadro en la malla.
 #define HEIGHT 700
 #define NIMAGENES 2 // Numero de imagenes externas.
 #define NOBJ 50
 #define NSKINS 3
-#define N 13
+#define N 26
 #define M 3
 #define PIXEL_TAM 4
 #define WIDTH 1040
@@ -52,8 +52,8 @@ int main()
 int creaMalla(Malla *cab, Malla *dino)
 {
     Malla cx1, cx2, cy, cxAux;
-    int res=1;
-    int x,y;
+    int res=1, x, y;
+
     for(y=0; y<M && res; y++, cxAux=cy)
         for(x=0; x<N && res; x++)
         {
@@ -61,9 +61,9 @@ int creaMalla(Malla *cab, Malla *dino)
             {
                 res=creaNodo(&cx1,0);
                 *dino=cx1;
-            }
-            else
+            } else
                 res=creaNodo(&cx1,0);
+
             if(res)
                 if(!y)
                     if(!x)
@@ -108,7 +108,7 @@ int creaNodo(Malla *nodo, int dato)
 
 void dibujaSprite(String nombre, int x, int y)
 {
-    int i, j, n, m, color, xIni, yIni;
+    int i, j, n, m, color, xIni, yIni, arr[23][24];
     FILE *f;
     xIni = x;
 
@@ -119,28 +119,28 @@ void dibujaSprite(String nombre, int x, int y)
     if(f)
     {
         fscanf(f, "%d\t%d\n", &n, &m);
-        for(i=0; i<n; i++, fscanf(f,"\n"), y+=PIXEL_TAM)
-            for(j=0, x=xIni; j<m; j++, x+=PIXEL_TAM)
+        for(i=0; i<n; i++, fscanf(f,"\n"))//, y+=PIXEL_TAM)
+            for(j=0, x=xIni; j<m; j++)//, x+=PIXEL_TAM)
             {
                 fscanf(f,"%d ", &color);
-                if(color!=1010)
+                arr[i][j] = color;
+                /*if(color!=1010)
                 {
                     setfillstyle(1, color);
                     bar(x, y, x+PIXEL_TAM, y+PIXEL_TAM);
-                }
+                }*/
             }
     }
     fclose(f);
 
-
-    /*for(i=0; i<m; i++, y+=PIXEL_TAM)
+    for(i=0; i<m; i++, y+=PIXEL_TAM)
         for(j=0, x=xIni; j<n; j++, x+=PIXEL_TAM)
             if(arr[j][i]!=1010)
             {
                 setfillstyle(1, arr[j][i]);
                 bar(x, y, x+PIXEL_TAM, y+PIXEL_TAM);
             }
-    */
+
 }
 
 void dibujaVidas(int vidas)
@@ -185,13 +185,14 @@ void juego(int nivel, int vidas)
     int spriteH, // Altura de cualquier sprite
         salto = 0,
         pagina = 1,
-        retraso = 350,
+        retraso = 260,
         i, j = 0,
         dinoPos = 3;
     String nSkin;
 
     srand(time(NULL));
     spriteH = 592 - PIXEL_TAM*23;
+    sprintf(nSkin, "dino%d.0.txt", skin);
 
 	pintaAmbiente(pagina);
 
@@ -210,31 +211,25 @@ void juego(int nivel, int vidas)
             retraso-=retraso>50?10:0;
             j=0;
             aux=cab;
-            for(i=0;i<N-1;i++)
-                aux=(aux->der);
+            for(i=0; i<N-1; i++)
+                aux = aux->der;
 
-            for(i=0;i<M-1;i++)
-                aux=(aux->abajo);
+            for(i=0; i<M-1; i++)
+                aux = aux->abajo;
 
-            aux->tipo=rand()%3+1;
+            aux->tipo=rand()%4+1;
         }
         j+=rand()%3;
         setvisualpage(pagina);
 
         if(kbhit())
         {
+            tecla = getch();
             putimage(0, 400, imagenes[1], COPY_PUT);
-            dibujaSprite(nSkin, 10, spriteH);
             pintaEscenario(cab);
-            switch(tecla = getch())
-            {
-                case 72:
-                    strcpy(nSkin, "");
-                    sprintf(nSkin, "dino%d.0.txt", skin);
-                    dibujaSprite(nSkin, 10, spriteH);
-                    salto = 1;
-                    break;
-            }
+            dibujaSprite(nSkin, 10, spriteH);
+            delay(retraso);
+            salto = 1;
         }
         salto = 0;
     }while(tecla!=27);
@@ -332,10 +327,11 @@ void pintaEscenario(Malla cab)
     auxy=cab;
 
     x = 0;
-    y = 440;
+    y = 510;
     for(j=0; j<M; j++, y+=CUADRO_TAM, x=0)
     {
         for(i=0; i<N; i++, x+=CUADRO_TAM, cab=cab->der)
+        {
             if(cab->tipo)
                 switch(cab->tipo)
                 {
@@ -343,10 +339,22 @@ void pintaEscenario(Malla cab)
                         dibujaSprite("hueso.txt", x, y);
                         break;
                     case 2:
-                        dibujaSprite("dino2.0.txt", x, y);
+                        dibujaSprite("huesito.txt", x, y);
+                        break;
+                    case 3:
+                        dibujaSprite("arbusto.txt", x, y);
+                        break;
+                    case 4:
+                        dibujaSprite("arbusto2.txt", x, y);
+                        break;
                 }
-
-        if(j!=(M-1))
+            putpixel(rand()%WIDTH, rand()%10+690, BROWN);
+            putpixel(rand()%WIDTH, rand()%10+690, GREEN);
+            putpixel(rand()%WIDTH, rand()%10+690, GREEN);
+        }
+        putpixel(rand()%WIDTH, rand()%30+600, WHITE);
+        putpixel(rand()%WIDTH, rand()%30+600, WHITE);
+        if(j!=M-1)
         {
             auxy=auxy->abajo;
             cab=auxy;
@@ -391,7 +399,7 @@ void portada()
 
     // Escribe numero de huesos
     obtenerDatos(&huesos, &skin);
-    dibujaSprite("hueso.txt", WIDTH-100, 0);
+    dibujaSprite("hueso.txt", WIDTH-80, -20);
     sprintf(aux, "%d", huesos);
     settextstyle(3, HORIZ_DIR, 49);
     outtextxy(WIDTH-180, 25, aux);
