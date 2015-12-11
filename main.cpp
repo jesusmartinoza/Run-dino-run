@@ -5,7 +5,7 @@
 
 #define CUADRO_TAM 40 // Tamaño de cada cuadro en la malla.
 #define HEIGHT 700
-#define NIMAGENES 2 // Numero de imagenes externas.
+#define NIMAGENES 7 // Numero de imagenes externas.
 #define NOBJ 50
 #define NSKINS 3
 #define N 26
@@ -33,7 +33,7 @@ void iniciaEntorno(); // Se encarga de iniciar la parte gráfica y obtener las im
 void juego(int nivel, int vidas); // Contiene todo el juego.
 void obtenerDatos(int *huesos, int *skin); // Lee de un archivo externo los huesos obtenidos del jugador y su skin.
 void menu(); // Dibujar el menú principal.
-void pintaAmbiente(int pagina); // Dibuja todo el escenario.
+void pintaAmbiente(int pagina, int jungla); // Dibuja todo el escenario.
 void pintaEscenario(Malla cab); // Dibuja los sprites de acuerdo a los valores de la malla.
 void portada(); // Dibujar la pantalla principal.
 void tienda(); // Dibuja todos los articulos disponibles.
@@ -161,7 +161,12 @@ void iniciaEntorno()
 
     String nombres[NIMAGENES] = {
         "img/logotipo.gif",
-        "img/jungla.jpg"
+        "img/jungla.jpg",
+        "img/jungla1.jpg",
+        "img/jungla2.jpg",
+        "img/jungla3.jpg",
+        "img/jungla4.jpg",
+        "img/jungla5.jpg"
     };
 
     // logo
@@ -171,10 +176,14 @@ void iniciaEntorno()
     getimage(0,0,798,303, imagenes[0]);
 
     // jungla
-    bar(0,0,WIDTH,HEIGHT);
-    readimagefile(nombres[1],0,0,WIDTH,300);
-    imagenes[1]  = malloc(imagesize(0,0,WIDTH,300));
-    getimage(0,0,WIDTH,300, imagenes[1]);
+    for(i=0; i<6; i++)
+    {
+        bar(0,0,WIDTH,HEIGHT);
+        readimagefile(nombres[i+1],0,0,WIDTH,300);
+        imagenes[i+1]  = malloc(imagesize(0,0,WIDTH,300));
+        getimage(0,0,WIDTH,300, imagenes[i+1]);
+    }
+
     portada();
 }
 
@@ -185,30 +194,40 @@ void juego(int nivel, int vidas)
     int spriteH, // Altura de cualquier sprite
         salto = 0,
         pagina = 1,
-        retraso = 260,
+        retraso = 180,
         i, j = 0,
-        dinoPos = 3;
+        dinoPos = 3,
+        jungla = 1;
     String nSkin;
 
     srand(time(NULL));
     spriteH = 592 - PIXEL_TAM*23;
     sprintf(nSkin, "dino%d.0.txt", skin);
 
-	pintaAmbiente(pagina);
+	pintaAmbiente(pagina, jungla);
 
     // Inicia malla
 	creaMalla(&cab, &dino);
+	setactivepage(pagina);
+    setfillstyle(1, COLOR(79, 182, 225));
+    bar(0,0, WIDTH, HEIGHT);
+
+	setactivepage(pagina!=pagina);
+    setfillstyle(1, COLOR(79, 182, 225));
+    bar(0,0, WIDTH, HEIGHT);
+
     setvisualpage(pagina);
     do
     {
         setactivepage(pagina=!pagina);
-        pintaAmbiente(pagina);
+        jungla+=jungla<=5?1:-5;
+        pintaAmbiente(pagina, jungla);
         delay(retraso);
         pintaEscenario(cab);
         dibujaVidas(vidas);
         if(j>6)
         {
-            retraso-=retraso>50?10:0;
+            retraso-=retraso>50?8:0;
             j=0;
             aux=cab;
             for(i=0; i<N-1; i++)
@@ -225,11 +244,11 @@ void juego(int nivel, int vidas)
         if(kbhit())
         {
             tecla = getch();
-            putimage(0, 400, imagenes[1], COPY_PUT);
+            putimage(0, 400, imagenes[jungla], COPY_PUT);
             pintaEscenario(cab);
             dibujaSprite(nSkin, 10, spriteH);
-            delay(retraso);
             salto = 1;
+            delay(retraso/2);
         }
         salto = 0;
     }while(tecla!=27);
@@ -306,17 +325,13 @@ void obtenerDatos(int *huesos, int *skin)
     fclose(f);
 }
 
-void pintaAmbiente(int pagina)
+void pintaAmbiente(int pagina, int jungla)
 {
     String nSkin;
-    // Borra todo y pone el fondo.
-    setfillstyle(1, COLOR(79, 182, 225));
-    bar(0,0, WIDTH, HEIGHT);
-    putimage(0, 400, imagenes[1], COPY_PUT);
 
     // Dino
     sprintf(nSkin, "dino%d.%d.txt", skin, pagina);
-    putimage(0, 400, imagenes[1], COPY_PUT);
+    putimage(0, 400, imagenes[rand()%3+1], COPY_PUT);
     dibujaSprite(nSkin, 10, 592);
 }
 
@@ -352,8 +367,8 @@ void pintaEscenario(Malla cab)
             putpixel(rand()%WIDTH, rand()%10+690, GREEN);
             putpixel(rand()%WIDTH, rand()%10+690, GREEN);
         }
-        putpixel(rand()%WIDTH, rand()%30+600, WHITE);
-        putpixel(rand()%WIDTH, rand()%30+600, WHITE);
+        putpixel(rand()%WIDTH, rand()%50+600, WHITE);
+        putpixel(rand()%WIDTH, rand()%80+600, WHITE);
         if(j!=M-1)
         {
             auxy=auxy->abajo;
