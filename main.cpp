@@ -5,7 +5,7 @@
 
 #define CUADRO_TAM 40 // Tamaño de cada cuadro en la malla.
 #define HEIGHT 700
-#define NIMAGENES 7 // Numero de imagenes externas.
+#define NIMAGENES 8 // Numero de imagenes externas.
 #define NOBJ 50
 #define NSKINS 3
 #define N 26
@@ -27,6 +27,7 @@ typedef struct nodo
 
 int creaMalla(Malla *cab, Malla *dino); // Crea la matriz donde iran los personajes y escenario.
 int creaNodo(Malla *nodo, int dato); // Pide memoria para la creación de un nodo.
+void creditos();
 void dibujaSprite(String nombre, int x, int y); // Abre un archivo de texto y comienza a dibujar a partir de las coordenadas.
 void dibujaVidas(int vidas); // Durante el juego dibuja las vidas del jugador.
 void iniciaEntorno(); // Se encarga de iniciar la parte gráfica y obtener las imágenes del juego.
@@ -106,6 +107,12 @@ int creaNodo(Malla *nodo, int dato)
     return(res);
 }
 
+void creditos()
+{
+    putimage(0,0, imagenes[6], COPY_PUT);
+    getch();
+    iniciaEntorno();
+}
 void dibujaSprite(String nombre, int x, int y)
 {
     int i, j, n, m, color, xIni, yIni, arr[23][24];
@@ -160,29 +167,36 @@ void iniciaEntorno()
     setcolor(WHITE);
 
     String nombres[NIMAGENES] = {
-        "img/logotipo.gif",
         "img/jungla.jpg",
         "img/jungla1.jpg",
         "img/jungla2.jpg",
         "img/jungla3.jpg",
         "img/jungla4.jpg",
-        "img/jungla5.jpg"
+        "img/jungla5.jpg",
+        "img/creditos.jpg",
+        "img/logotipo.gif"
     };
-
-    // logo
-    bar(0,0,WIDTH,HEIGHT);
-    readimagefile(nombres[0],0,0,798,303);
-    imagenes[0]  = malloc(imagesize(0,0,798,303));
-    getimage(0,0,798,303, imagenes[0]);
 
     // jungla
     for(i=0; i<6; i++)
     {
         bar(0,0,WIDTH,HEIGHT);
-        readimagefile(nombres[i+1],0,0,WIDTH,300);
-        imagenes[i+1]  = malloc(imagesize(0,0,WIDTH,300));
-        getimage(0,0,WIDTH,300, imagenes[i+1]);
+        readimagefile(nombres[i],0,0,WIDTH,300);
+        imagenes[i]  = malloc(imagesize(0,0,WIDTH,300));
+        getimage(0,0,WIDTH,300, imagenes[i]);
     }
+
+    // Creditos
+    bar(0,0,WIDTH,HEIGHT);
+    readimagefile(nombres[i],0,0,1040,390);
+    imagenes[i]  = malloc(imagesize(0,0,1040,390));
+    getimage(0,0,1040,390, imagenes[i]);
+
+    // logo
+    bar(0,0,WIDTH,HEIGHT);
+    readimagefile(nombres[++i],0,0,798,303);
+    imagenes[i]  = malloc(imagesize(0,0,798,303));
+    getimage(0,0,798,303, imagenes[i]);
 
     portada();
 }
@@ -235,6 +249,7 @@ void juego(int nivel, int vidas)
 
             for(i=0; i<M-1; i++)
                 aux = aux->abajo;
+
 
             aux->tipo=rand()%4+1;
         }
@@ -308,7 +323,7 @@ void menu()
             //ayuda("ayuda.txt", 0, HEIGHT/2-100, WIDTH, HEIGHT);
             break;
         case 3:
-            //creditos();
+            creditos();
             break;
     }
 }
@@ -408,7 +423,7 @@ void portada()
     for(i=0; i<50; i++)
     {
         bar(0, 0, WIDTH,305);
-        putimage(WIDTH/10, i, imagenes[0], COPY_PUT);
+        putimage(WIDTH/10, i, imagenes[NIMAGENES-1], COPY_PUT);
         delay(2);
     }
 
