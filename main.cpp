@@ -25,6 +25,7 @@ typedef struct nodo
     struct nodo *der;
 }*Malla;
 
+int compra(int id); // Compra el articulo.
 int creaMalla(Malla *cab, Malla *dino); // Crea la matriz donde iran los personajes y escenario.
 int creaNodo(Malla *nodo, int dato); // Pide memoria para la creación de un nodo.
 void creditos(); // Imprime creditos.
@@ -53,6 +54,48 @@ int main()
     return 0;
 }
 
+int compra(int id)
+{
+    int res = 0, huesos;
+    char articulos[3];  // C == Comprado, B = Bloqueado.
+    FILE *f;
+
+    f = fopen("ajustes.txt", "r+");
+
+    if(f)
+    {
+        fscanf(f, "%X %d %c %c %c\n", &huesos, &skin, &articulos[0], &articulos[1], &articulos[2]);
+
+        switch(id)
+        {
+            case 2:
+                if(huesos<300 && articulos[1]=='B')
+                    printf("\nNo hay suficientes huesos");
+                else if (articulos[1]=='C')
+                    skin = id;
+                else if(articulos[1]!='C') {
+                    fseek(f, 0, SEEK_SET);
+                    huesos-=300;
+                    fprintf(f, "%X %d %c %c %c", huesos, 2, 'C', 'C', 'B');
+                }
+                break;
+            case 3:
+                if(huesos<600 && articulos[2]=='B')
+                    printf("\nNo hay suficientes huesos");
+                else if (articulos[2]=='C')
+                    skin = id;
+                else if(articulos[2]!='C') {
+                    fseek(f, 0, SEEK_SET);
+                    huesos-=600;
+                    fprintf(f, "%X %d %c %c %c", huesos, 3, 'C', 'C', 'C');
+                }
+                break;
+        }
+    }
+
+    fclose(f);
+    return res;
+}
 int creaMalla(Malla *cab, Malla *dino)
 {
     Malla cx1, cx2, cy, cxAux;
@@ -113,8 +156,7 @@ int creaNodo(Malla *nodo, int dato)
 void creditos()
 {
     putimage(0,0, imagenes[6], COPY_PUT);
-    getch();
-    iniciaEntorno();
+    menu();
 }
 
 void escribeAjustes(int huesos)
@@ -235,7 +277,7 @@ void juego(int vidas)
     char tecla;
     Malla cab = NULL, dino, aux;
     int spriteH, // Altura de cualquier sprite
-        retraso = 180,
+        retraso = 150,
         pagina = 1,
         i, j = 0,
         huesos,
@@ -297,7 +339,7 @@ void juego(int vidas)
 
         switch(dino->tipo)
         {
-            case 1:huesos+=5; break;
+            case 1:huesos+=5;break;
             case 2:huesos++; break;
             case 3:vidas--;  break;
             case 4:vidas--;  break;
@@ -505,28 +547,53 @@ void portada()
 
 void tienda()
 {
-    int i, xi, pag = 1;
+    int i, xi, pag = 1,
+        huesos,
+        pos = 0; // Posicion del indicador.
     char tecla;
     String aux;
 
+    obtenerDatos(&huesos, &i);
     setvisualpage(pag);
     while(tecla!=27)
     {
         setactivepage(pag=!pag);
         setfillstyle(1, COLOR(79, 182, 225));
         bar(0,0, WIDTH, HEIGHT);
-        if(kbhit())
-            tecla = getch();
+        dibujaHuesos(huesos);
+        setfillstyle(1, 0x00f);
+        for(i=0, xi=WIDTH/3; i<NSKINS; i++, xi+=PIXEL_TAM*25)
+            if(pos==i)
+                bar(xi, 450+PIXEL_TAM*25, xi+PIXEL_TAM*20, 460+PIXEL_TAM*25);
 
+        if(kbhit())
+            switch(tecla = getch())
+            {
+                case 13:
+                    compra(pos+1);
+                    obtenerDatos(&huesos, &i);
+                    break;
+                case 77:
+                    if(pos!=2)
+                        pos++;
+                    break;
+                case 75:
+                    if(pos!=0)
+                        pos--;
+                    break;
+            }
+
+        setbkcolor(0x0066F4);
+        setfillstyle(1, 0x0066F4);
+        setcolor(0x003988);
+        settextstyle(2, HORIZ_DIR, 8);
         for(i=0, xi=WIDTH/3; i<NSKINS; i++, xi+=PIXEL_TAM*25)
         {
             sprintf(aux, "dino%d.%d.txt", i+1,pag);
             dibujaSprite(aux, xi, 450);
-            if(skin==i+1)
-            {
-                setfillstyle(1, 0x00f);
-                bar(xi, 450+PIXEL_TAM*25, xi+PIXEL_TAM*20, 460+PIXEL_TAM*25);
-            }
+            sprintf(aux, "$ %d", 300*i);
+            if(i)
+                outtextxy(xi, 460+PIXEL_TAM*25, aux);
         }
         setvisualpage(pag);
         delay(80);
